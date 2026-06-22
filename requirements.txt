@@ -1,0 +1,22 @@
+# Core
+numpy
+pandas
+scipy
+scikit-learn
+matplotlib
+
+# Models
+xgboost
+lightgbm
+imbalanced-learn
+
+# Explainability and fairness
+shap
+fairlearn
+
+# Optional: TabNet deep-learning baseline (train_tabnet_hpc.py); requires a CUDA GPU
+# torch
+# pytorch-tabnet
+
+# Tested with: Python 3.11-3.13, scikit-learn 1.8, xgboost 3.1, lightgbm 4.6,
+# shap 0.50, fairlearn 0.13, imbalanced-learn 0.14.

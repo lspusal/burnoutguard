@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BurnoutGuard - Moodle Plugin Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --moodle-primary: #1177d1;
+            --moodle-primary-dark: #0a5694;
+            --moodle-secondary: #f7f7f7;
+            --moodle-nav-bg: #fff;
+            --moodle-text: #1d2125;
+            --moodle-text-muted: #6a737d;
+            --moodle-border: #dee2e6;
+            --risk-high: #dc3545;
+            --risk-high-bg: #f8d7da;
+            --risk-medium: #fd7e14;
+            --risk-medium-bg: #fff3cd;
+            --risk-low: #28a745;
+            --risk-low-bg: #d4edda;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--moodle-secondary);
+            color: var(--moodle-text);
+            line-height: 1.5;
+        }
+
+        /* Moodle-style Header */
+        .moodle-header {
+            background: var(--moodle-nav-bg);
+            border-bottom: 1px solid var(--moodle-border);
+            padding: 0 20px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .moodle-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.25em;
+            font-weight: 600;
+            color: var(--moodle-primary);
+        }
+
+        .moodle-logo img {
+            height: 36px;
+        }
+
+        .moodle-nav {
+            display: flex;
+            gap: 8px;
+        }
+
+        .moodle-nav a {
+            padding: 8px 16px;
+            color: var(--moodle-text);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .moodle-nav a:hover {
+            background: var(--moodle-secondary);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--moodle-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            padding: 12px 24px;
+            background: var(--moodle-nav-bg);
+            border-bottom: 1px solid var(--moodle-border);
+            font-size: 0.875em;
+        }
+
+        .breadcrumb a {
+            color: var(--moodle-primary);
+            text-decoration: none;
+        }
+
+        .breadcrumb span {
+            color: var(--moodle-text-muted);
+            margin: 0 8px;
+        }
+
+        /* Main Content */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-title h1 {
+            font-size: 1.75em;
+            font-weight: 600;
+        }
+
+        .plugin-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .refresh-btn {
+            background: var(--moodle-primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: var(--moodle-primary-dark);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card.high {
+            border-left-color: var(--risk-high);
+        }
+
+        .stat-card.medium {
+            border-left-color: var(--risk-medium);
+        }
+
+        .stat-card.low {
+            border-left-color: var(--risk-low);
+        }
+
+        .stat-card.total {
+            border-left-color: var(--moodle-primary);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-card.high .stat-number {
+            color: var(--risk-high);
+        }
+
+        .stat-card.medium .stat-number {
+            color: var(--risk-medium);
+        }
+
+        .stat-card.low .stat-number {
+            color: var(--risk-low);
+        }
+
+        .stat-card.total .stat-number {
+            color: var(--moodle-primary);
+        }
+
+        .stat-label {
+            color: var(--moodle-text-muted);
+            font-size: 0.875em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Section Header */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 32px 0 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--moodle-border);
+        }
+
+        .section-header.high {
+            border-bottom-color: var(--risk-high-bg);
+        }
+
+        .section-header.medium {
+            border-bottom-color: var(--risk-medium-bg);
+        }
+
+        .section-header h2 {
+            font-size: 1.25em;
+            font-weight: 600;
+        }
+
+        .section-header.high h2 {
+            color: var(--risk-high);
+        }
+
+        .section-header.medium h2 {
+            color: var(--risk-medium);
+        }
+
+        .section-icon {
+            font-size: 1.5em;
+        }
+
+        /* Student Cards */
+        .student-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid;
+        }
+
+        .student-card.high {
+            border-left-color: var(--risk-high);
+        }
+
+        .student-card.medium {
+            border-left-color: var(--risk-medium);
+        }
+
+        .student-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .student-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .student-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .student-name {
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .student-meta {
+            color: var(--moodle-text-muted);
+            font-size: 0.85em;
+            margin-top: 2px;
+        }
+
+        .risk-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .risk-badge.high {
+            background: var(--risk-high-bg);
+            color: var(--risk-high);
+        }
+
+        .risk-badge.medium {
+            background: var(--risk-medium-bg);
+            color: #856404;
+        }
+
+        /* AI Explanation Box */
+        .explanation-box {
+            background: linear-gradient(135deg, #f8f9fc 0%, #eef1f5 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 16px 0;
+            border-left: 4px solid var(--moodle-primary);
+        }
+
+        .explanation-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--moodle-primary);
+            font-weight: 600;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .ai-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .explanation-text {
+            color: #4a5568;
+            font-style: italic;
+            line-height: 1.7;
+        }
+
+        /* Risk Factors */
+        .factors-section {
+            margin: 20px 0;
+        }
+
+        .factors-label {
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .factor-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .factor-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1em;
+        }
+
+        .factor-icon.high {
+            background: var(--risk-high-bg);
+        }
+
+        .factor-icon.medium {
+            background: var(--risk-medium-bg);
+        }
+
+        .factor-text {
+            flex: 1;
+            color: #4a5568;
+        }
+
+        .factor-impact {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .factor-impact.alto {
+            background: var(--risk-high-bg);
+            color: var(--risk-high);
+        }
+
+        .factor-impact.medio {
+            background: var(--risk-medium-bg);
+            color: #856404;
+        }
+
+        /* Recommendations */
+        .recommendations-section {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--moodle-border);
+        }
+
+        .recommendations-label {
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .recommendation-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 0;
+        }
+
+        .recommendation-icon {
+            color: var(--risk-low);
+            font-size: 1.1em;
+        }
+
+        .recommendation-text {
+            color: #4a5568;
+        }
+
+        /* Action Button */
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--moodle-primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-size: 0.9em;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: background 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--moodle-primary-dark);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--moodle-text-muted);
+            font-size: 0.85em;
+            border-top: 1px solid var(--moodle-border);
+            margin-top: 40px;
+        }
+
+        .footer a {
+            color: var(--moodle-primary);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .moodle-nav {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Moodle Header -->
+    <header class="moodle-header">
+        <div class="moodle-logo">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                <circle cx="18" cy="18" r="18" fill="#1177d1" />
+                <text x="18" y="24" text-anchor="middle" fill="white" font-size="18" font-weight="bold">M</text>
+            </svg>
+            <span>Moodle</span>
+        </div>
+        <nav class="moodle-nav">
+            <a href="#">Inicio</a>
+            <a href="#">Mis cursos</a>
+            <a href="#">Calendario</a>
+        </nav>
+        <div class="user-menu">
+            <div class="user-avatar">PG</div>
+            <span>Prof. García</span>
+        </div>
+    </header>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="#">Inicio</a>
+        <span>/</span>
+        <a href="#">Mis cursos</a>
+        <span>/</span>
+        <a href="#">Programación I</a>
+        <span>/</span>
+        <strong>BurnoutGuard</strong>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-container">
+        <div class="page-header">
+            <div class="page-title">
+                <h1>🛡️ BurnoutGuard</h1>
+                <span class="plugin-badge">IA Explicable</span>
+            </div>
+            <button class="refresh-btn">
+                🔄 Actualizar predicciones
+            </button>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card high">
+                <div class="stat-number">3</div>
+                <div class="stat-label">Riesgo Alto</div>
+            </div>
+            <div class="stat-card medium">
+                <div class="stat-number">5</div>
+                <div class="stat-label">Riesgo Medio</div>
+            </div>
+            <div class="stat-card low">
+                <div class="stat-number">42</div>
+                <div class="stat-label">Riesgo Bajo</div>
+            </div>
+            <div class="stat-card total">
+                <div class="stat-number">50</div>
+                <div class="stat-label">Total Estudiantes</div>
+            </div>
+        </div>
+
+        <!-- High Risk Section -->
+        <div class="section-header high">
+            <span class="section-icon">⚠️</span>
+            <h2>Estudiantes en Riesgo Alto</h2>
+        </div>
+
+        <!-- Student Card 1 -->
+        <div class="student-card high">
+            <div class="student-header">
+                <div class="student-info">
+                    <div class="student-avatar">JP</div>
+                    <div>
+                        <div class="student-name">Juan Pérez López</div>
+                        <div class="student-meta">Último acceso: hace 10 días · ID: 12847</div>
+                    </div>
+                </div>
+                <div class="risk-badge high">90% Riesgo Alto</div>
+            </div>
+
+            <div class="explanation-box">
+                <div class="explanation-label">
+                    🤖 Explicación IA <span class="ai-badge">Llama 3.3 70B</span>
+                </div>
+                <p class="explanation-text">
+                    "El estudiante Juan Pérez presenta un nivel de riesgo alto de abandono (90%) en el curso
+                    'Programación I'.
+                    Los principales factores identificados son: (1) sin acceder al curso en 10 días, mostrando un patrón
+                    de
+                    desvinculación progresiva; (2) nota media (45%) significativamente por debajo del promedio del curso
+                    (68%);
+                    y (3) solo ha completado 1 de 4 tareas asignadas, lo que sugiere dificultades con la carga de
+                    trabajo."
+                </p>
+            </div>
+
+            <div class="factors-section">
+                <div class="factors-label">📊 Factores de Riesgo Identificados</div>
+                <div class="factor-item">
+                    <div class="factor-icon high">📅</div>
+                    <div class="factor-text">Sin acceder al curso en 10 días</div>
+                    <span class="factor-impact alto">Alto</span>
+                </div>
+                <div class="factor-item">
+                    <div class="factor-icon high">📉</div>
+                    <div class="factor-text">Nota media (45%) por debajo del promedio del curso (68%)</div>
+                    <span class="factor-impact alto">Alto</span>
+                </div>
+                <div class="factor-item">
+                    <div class="factor-icon medium">📝</div>
+                    <div class="factor-text">Solo ha completado 1 de 4 tareas (25%)</div>
+                    <span class="factor-impact alto">Alto</span>
+                </div>
+            </div>
+
+            <div class="recommendations-section">
+                <div class="recommendations-label">💡 Recomendaciones de Acción</div>
+                <div class="recommendation-item">
+                    <span class="recommendation-icon">✓</span>
+                    <span class="recommendation-text">Enviar un mensaje de seguimiento personalizado al
+                        estudiante</span>
+                </div>
+                <div class="recommendation-item">
+                    <span class="recommendation-icon">✓</span>
+                    <span class="recommendation-text">Verificar si el estudiante tiene problemas de acceso
+                        técnico</span>
+                </div>
+                <div class="recommendation-item">
+                    <span class="recommendation-icon">✓</span>
+                    <span class="recommendation-text">Ofrecer sesión de tutoría para reforzar conceptos básicos de
+                        programación</span>
+                </div>
+            </div>
+
+            <button class="action-btn">✉️ Contactar Estudiante</button>
+        </div>
+
+        <!-- Student Card 2 -->
+        <div class="student-card high">
+            <div class="student-header">
+                <div class="student-info">
+                    <div class="student-avatar">MG</div>
+                    <div>
+                        <div class="student-name">María García Sánchez</div>
+                        <div class="student-meta">Último acceso: hace 7 días · ID: 12923</div>
+                    </div>
+                </div>
+                <div class="risk-badge high">85% Riesgo Alto</div>
+            </div>
+
+            <div class="explanation-box">
+                <div class="explanation-label">
+                    🤖 Explicación IA <span class="ai-badge">Llama 3.3 70B</span>
+                </div>
+                <p class="explanation-text">
+                    "María muestra señales preocupantes de desvinculación. Su actividad ha disminuido un 70% en las
+                    últimas
+                    dos semanas y no ha entregado las últimas dos tareas. El patrón temporal sugiere posibles
+                    dificultades
+                    personales o académicas. Se recomienda intervención inmediata y empática."
+                </p>
+            </div>
+
+            <div class="factors-section">
+                <div class="factors-label">📊 Factores de Riesgo Identificados</div>
+                <div class="factor-item">
+                    <div class="factor-icon high">📅</div>
+                    <div class="factor-text">Sin acceder al curso en 7 días</div>
+                    <span class="factor-impact alto">Alto</span>
+                </div>
+                <div class="factor-item">
+                    <div class="factor-icon medium">📝</div>
+                    <div class="factor-text">Solo ha completado 2 de 5 tareas (40%)</div>
+                    <span class="factor-impact alto">Alto</span>
+                </div>
+            </div>
+
+            <button class="action-btn">✉️ Contactar Estudiante</button>
+        </div>
+
+        <!-- Medium Risk Section -->
+        <div class="section-header medium">
+            <span class="section-icon">⚡</span>
+            <h2>Estudiantes en Riesgo Medio</h2>
+        </div>
+
+        <!-- Student Card 3 -->
+        <div class="student-card medium">
+            <div class="student-header">
+                <div class="student-info">
+                    <div class="student-avatar">AL</div>
+                    <div>
+                        <div class="student-name">Ana López Martín</div>
+                        <div class="student-meta">Último acceso: hace 4 días · ID: 13001</div>
+                    </div>
+                </div>
+                <div class="risk-badge medium">55% Riesgo Medio</div>
+            </div>
+
+            <div class="explanation-box">
+                <div class="explanation-label">
+                    🤖 Explicación IA <span class="ai-badge">Llama 3.3 70B</span>
+                </div>
+                <p class="explanation-text">
+                    "Ana presenta un riesgo moderado. Aunque mantiene cierta actividad regular en la plataforma,
+                    su rendimiento en las últimas evaluaciones ha descendido un 15%. Se sugiere un seguimiento
+                    preventivo para evitar que el riesgo aumente."
+                </p>
+            </div>
+
+            <div class="factors-section">
+                <div class="factors-label">📊 Factores de Riesgo Identificados</div>
+                <div class="factor-item">
+                    <div class="factor-icon medium">📉</div>
+                    <div class="factor-text">Nota media (58%) ligeramente por debajo del promedio (68%)</div>
+                    <span class="factor-impact medio">Medio</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Card 4 -->
+        <div class="student-card medium">
+            <div class="student-header">
+                <div class="student-info">
+                    <div class="student-avatar">CR</div>
+                    <div>
+                        <div class="student-name">Carlos Rodríguez Díaz</div>
+                        <div class="student-meta">Último acceso: hace 3 días · ID: 13045</div>
+                    </div>
+                </div>
+                <div class="risk-badge medium">48% Riesgo Medio</div>
+            </div>
+
+            <div class="explanation-box">
+                <div class="explanation-label">
+                    🤖 Explicación IA <span class="ai-badge">Llama 3.3 70B</span>
+                </div>
+                <p class="explanation-text">
+                    "Carlos muestra patrones irregulares de actividad. Aunque sus notas son aceptables (62%),
+                    su participación en foros es nula y tiende a entregar tareas cerca del límite. Patrón
+                    típico de estudiante en riesgo de desvinculación gradual."
+                </p>
+            </div>
+
+            <div class="factors-section">
+                <div class="factors-label">📊 Factores de Riesgo Identificados</div>
+                <div class="factor-item">
+                    <div class="factor-icon medium">💬</div>
+                    <div class="factor-text">Sin participación en foros de discusión</div>
+                    <span class="factor-impact medio">Medio</span>
+                </div>
+                <div class="factor-item">
+                    <div class="factor-icon medium">⏰</div>
+                    <div class="factor-text">Entregas frecuentes cerca del límite de tiempo</div>
+                    <span class="factor-impact medio">Medio</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>BurnoutGuard v1.0</strong> - Sistema de Alerta Temprana con IA Explicable</p>
+        <p>Powered by Machine Learning + LLM (Llama 3.3 70B via Groq)</p>
+        <p style="margin-top: 10px; font-size: 0.8em;">
+            Plugin para Moodle 4.0+ · <a href="#">Documentación</a> · <a href="#">Configuración</a>
+        </p>
+    </footer>
+</body>
+
+</html>
