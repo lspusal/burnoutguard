@@ -20,9 +20,13 @@ The system is built around two ideas:
 .
 ├── data/                 # OULAD download helper (the data itself is not committed)
 ├── src/                  # data loading and feature-engineering utilities
-├── revision_*.py         # analysis scripts (one per result; see REPRODUCE.md)
-├── run_real_pipeline.py  # shared data/feature layer
-├── train_tabnet_hpc.py   # optional TabNet deep-learning baseline (GPU)
+├── pipeline.py           # features, models, ablation, leakage, subgroup fairness
+├── horizons*.py          # evaluation at the week 4-8 deployment horizons
+├── fairness_*.py         # fairness audits (constrained models, disability)
+├── operating_point.py    # thresholds, capacity rule, precision@k
+├── make_figures.py       # figures (see REPRODUCE.md for the full list)
+├── oulad_data.py         # shared data/feature layer
+├── tabnet_baseline.py    # optional TabNet baseline (GPU)
 ├── burnoutguard/         # deployable system: FastAPI backend + Moodle plugin
 ├── REPRODUCE.md          # step-by-step reproduction guide
 ├── requirements.txt
