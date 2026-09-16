@@ -31,42 +31,53 @@ Academic risk is operationalized as **course withdrawal**
 
 | Result | Script | Output |
 |---|---|---|
-| Class-imbalance ablation (CV ± SD) | `revision_pipeline.py` | `results/metrics/revision/ablation_cv.csv`, `ablation_ttests.json` |
-| Model comparison (CV ± SD) | `revision_pipeline.py` | `results/metrics/revision/model_comparison_cv.csv` |
-| Leakage-robustness | `revision_pipeline.py` | `results/metrics/revision/leakage_robust_cv.csv`, `leakage_tests.json` |
-| Subgroup fairness (FPR/FNR/AUROC/ECE) | `revision_pipeline.py` | `results/metrics/revision/fairness_extended.json` |
-| Fairness-constrained models (DP/EO) | `revision_fairness.py` | `results/metrics/revision/fairness_constrained.json` |
-| SHAP global importance | `revision_shap.py` | `results/metrics/revision/shap_importance_withdrawn.csv` |
-| Early prediction + bootstrap CIs | `revision_early.py` | `results/metrics/revision/early_prediction_withdrawn.csv` |
-| Architecture control (plain XGBoost on truncated features) | `revision_arch_control.py` | `results/metrics/revision/early_arch_control_xgb.csv` |
-| DeLong, leave-presentations-out CV, reliability diagram | `revision_followup.py` | `results/metrics/revision/{delong_lr_vs_xgb,cross_presentation_cv}.json`, `figures/calibration.png` |
-| Pairwise DeLong/bootstrap, fairness bootstrap CIs, intersectional, per-group calibration | `revision_followup2.py` | `results/metrics/revision/{model_stats,fairness_bootstrap_ci,fairness_intersectional}.json`, `figures/calibration_groups.png` |
-| TabNet deep-learning baseline (GPU) | `train_tabnet_hpc.py` | `results/tabnet_cv.json` |
-| Figures (SHAP, ROC, early prediction) | `revision_figures.py` | `figures/*.png` |
-| Pipeline diagram | `revision_pipeline_fig.py` | `figures/pipeline.png` |
+| Class-imbalance ablation (CV ± SD) | `pipeline.py` | `results/metrics/ablation_cv.csv`, `ablation_ttests.json` |
+| Model comparison (CV ± SD) | `pipeline.py` | `results/metrics/model_comparison_cv.csv` |
+| Ensemble under the same 5-fold CV (mean ± SD) | `ensemble_cv.py` | `results/metrics/ensemble_cv.json` |
+| External validation on a second dropout dataset (UCI id 697) | `external_validation.py` | `results/metrics/external_validation_uci.json` |
+| Early prediction with presentation-grouped folds; SHAP, calibration and fairness at weeks 4/8 | `horizons.py` | `results/metrics/{early_grouped_vs_random,horizon_fairness_calibration}.json`, `figures/shap_early.png` |
+| Presentation-grouped folds for the stacking early model (one week per run) | `horizons_stacking.py <week>` | `results/metrics/early_grouped_stacking.json` |
+| Post-hoc calibration at the deployment horizons (isotonic / Platt) | `horizons_calibration.py` | `results/metrics/horizon_calibration.json` |
+| Operating points: fairness at calibrated / capacity thresholds, precision@k | `operating_point.py` | `results/metrics/operating_point.json` |
+| Full-course fairness for the disability attribute | `fairness_disability.py` | `results/metrics/fairness_disability.json` |
+| Leakage-robustness | `pipeline.py` | `results/metrics/leakage_robust_cv.csv`, `leakage_tests.json` |
+| Subgroup fairness (FPR/FNR/AUROC/ECE) | `pipeline.py` | `results/metrics/fairness_extended.json` |
+| Fairness-constrained models (DP/EO) | `fairness_constrained.py` | `results/metrics/fairness_constrained.json` |
+| SHAP global importance | `shap_analysis.py` | `results/metrics/shap_importance_withdrawn.csv` |
+| Early prediction + bootstrap CIs | `early_prediction.py` | `results/metrics/early_prediction_withdrawn.csv` |
+| Architecture control (plain XGBoost on truncated features) | `early_architecture_control.py` | `results/metrics/early_arch_control_xgb.csv` |
+| DeLong, leave-presentations-out CV, reliability diagram | `generalization_tests.py` | `results/metrics/{delong_lr_vs_xgb,cross_presentation_cv}.json`, `figures/calibration.png` |
+| Pairwise DeLong/bootstrap, fairness bootstrap CIs, intersectional, per-group calibration | `model_stats_fairness.py` | `results/metrics/{model_stats,fairness_bootstrap_ci,fairness_intersectional}.json`, `figures/calibration_groups.png` |
+| TabNet deep-learning baseline (GPU) | `tabnet_baseline.py` | `results/tabnet_cv.json` |
+| Figures (SHAP, ROC, early prediction) | `make_figures.py` | `figures/*.png` |
+| Pipeline diagram | `make_pipeline_diagram.py` | `figures/pipeline.png` |
 
 ```bash
-python revision_pipeline.py     # ablation, model comparison, leakage, subgroup fairness
-python revision_fairness.py     # fairlearn demographic-parity-constrained models
-python revision_shap.py         # SHAP global importance
-python revision_early.py        # temporally-truncated early prediction (weeks 2–20)
-python revision_arch_control.py # plain XGBoost on the early features (architecture control)
-python revision_followup.py     # DeLong, cross-presentation CV, reliability diagram
-python revision_followup2.py    # pairwise model stats, fairness CIs, intersectional, calibration
-python revision_figures.py      # regenerate figures
-python revision_pipeline_fig.py # pipeline diagram
+python pipeline.py     # ablation, model comparison, leakage, subgroup fairness
+python fairness_constrained.py     # fairlearn demographic-parity-constrained models
+python shap_analysis.py         # SHAP global importance
+python early_prediction.py        # temporally-truncated early prediction (weeks 2–20)
+python early_architecture_control.py # plain XGBoost on the early features (architecture control)
+python generalization_tests.py     # DeLong, cross-presentation CV, reliability diagram
+python model_stats_fairness.py    # pairwise model stats, fairness CIs, intersectional, calibration
+python make_figures.py      # regenerate figures
+python make_pipeline_diagram.py # pipeline diagram
 ```
 
-`run_real_pipeline.py` and `src/` provide the data loading and feature utilities
-that the scripts above build on. The TabNet baseline (`train_tabnet_hpc.py`)
+`oulad_data.py` and `src/` provide the data loading and feature utilities
+that the scripts above build on. The TabNet baseline (`tabnet_baseline.py`)
 requires a CUDA GPU and `pytorch-tabnet`; it is the only step that benefits from
 a GPU. Each script writes machine-readable CSV/JSON under
-`results/metrics/revision/` and logs the reported values.
+`results/metrics/` and logs the reported values.
 
 ## 5. BurnoutGuard plugin
 
 The deployable system (FastAPI backend + Moodle local plugin + Docker compose) is
-under `burnoutguard/`. See `burnoutguard/README.md` for deployment. Explanations
+under `burnoutguard/`. See `burnoutguard/README.md` for deployment. The backend
+ships a fitted isotonic calibrator and applies it before any probability is shown;
+regenerate model and calibrator with `python burnoutguard/backend/fit_calibrator.py
+--data data --week 8`. `POST /batch_predict` accepts a `capacity` parameter that
+flags the highest-risk fraction of a cohort instead of using a fixed threshold. Explanations
 are template-based by default; an optional LLM tier (OpenAI-compatible endpoint)
 can be enabled, in which case the per-student risk factors are sent to that
 endpoint — disable it, or point it at a self-hosted model, for fully local
