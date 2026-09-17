@@ -60,10 +60,15 @@ for wk in [4, 8]:
                .fillna(50).values.ravel())
     attrs["imd_band"] = (imd_num <= np.median(imd_num)).astype(int)
     # all three scenarios share the same model and split, so they are comparable
-    thr_cap = np.quantile(p_cal, 0.80)
+    # Regla de capacidad: seleccionar EXACTAMENTE el 20% de mayor riesgo por
+    # ranking. Un corte por percentil no vale: la isotónica produce mesetas con
+    # muchos empates y ">= percentil 80" acaba marcando bastante más del 20%.
+    n_flag = int(round(0.20 * len(p_cal)))
+    top = np.zeros(len(p_cal), dtype=int)
+    top[np.argsort(p_cal)[::-1][:n_flag]] = 1
     scen = {"raw_0.5": (p_te >= 0.5).astype(int),
             "cal_0.5": (p_cal >= 0.5).astype(int),
-            "capacity_top20": (p_cal >= thr_cap).astype(int)}
+            "capacity_top20": top}
     out = {"n_test": int(len(yte)), "base_rate": float(yte.mean()),
            "sel_rate": {k: float(v.mean()) for k, v in scen.items()}, "fairness": {}}
     for sname, pred in scen.items():

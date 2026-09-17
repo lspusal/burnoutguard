@@ -20,6 +20,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from risk_set import apply_risk_set
+from horizon_features import add_horizon_features
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_auc_score, f1_score, accuracy_score
@@ -125,6 +127,14 @@ def extract_enhanced_features(df_vle, df_info, week: int):
         how='inner'
     )
     features = features.fillna(0)
+    # sólo estudiantes aún matriculados en el horizonte (ver risk_set.py)
+    features = apply_risk_set(features, max_day)
+    features, _added = add_horizon_features(features, week)
+    features = features.drop(columns=[c for c in features.columns
+                                      if c.endswith("_dup") or c in
+                                      ["last_submit", "gender", "age_band", "imd_band",
+                                       "disability", "highest_education", "final_result"]],
+                             errors="ignore")
     
     feature_cols = [c for c in features.columns if c not in 
                    ['id_student', 'code_module', 'code_presentation', 'burnout']]

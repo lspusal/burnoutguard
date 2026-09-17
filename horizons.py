@@ -23,6 +23,8 @@ from sklearn.model_selection import StratifiedKFold, GroupKFold, train_test_spli
 from sklearn.metrics import roc_auc_score, brier_score_loss, confusion_matrix
 from imblearn.over_sampling import SMOTE
 import xgboost as xgb
+from risk_set import apply_risk_set
+from horizon_features import add_horizon_features
 warnings.filterwarnings("ignore")
 SEED = 42
 OUT = Path("results/metrics"); OUT.mkdir(parents=True, exist_ok=True)
@@ -63,7 +65,14 @@ def extract_full(vle, info, week):
     im = info[KEYS + ["final_result"] + DEMO].copy()
     f = b.merge(im, on=KEYS, how="inner").fillna(0)
     f["y"] = (f["final_result"] == "Withdrawn").astype(int)
-    feat = [c for c in f.columns if c not in KEYS + ["final_result", "y"] + DEMO]
+    # sólo estudiantes aún matriculados en el horizonte (ver risk_set.py)
+    f = apply_risk_set(f, md)
+    f, added = add_horizon_features(f, week)
+    drop = KEYS + ["final_result", "y"] + DEMO + [c for c in f.columns if c.endswith("_dup")] \
+           + ["last_submit"] + [c for c in f.columns if c.endswith("_code")] \
+           + [c for c in ["gender", "age_band", "imd_band", "disability",
+                          "highest_education"] if c in f.columns]
+    feat = [c for c in f.columns if c not in drop]
     return f, feat
 
 

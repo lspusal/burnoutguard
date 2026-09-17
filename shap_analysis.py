@@ -38,3 +38,18 @@ for _, r in imp.head(12).iterrows():
     log.info(f"  {r.feature:24s} {r.mean_abs_shap:.4f}  {r.importance_pct:.1f}%")
 top3 = imp.head(3).importance_pct.sum()
 log.info(f"Top-3 cumulative importance: {top3:.1f}%")
+
+# SHAP dependence for last_access_day (absolute course day, not a recency).
+j = list(samp.columns).index("last_access_day")
+lad, sj = samp["last_access_day"].values, sv[:, j]
+log.info(f"last_access_day: range {lad.min():.0f}-{lad.max():.0f}, "
+         f"corr(value, SHAP) = {np.corrcoef(lad, sj)[0, 1]:.3f}")
+edges = [-np.inf, 0, 25, 50, 75, 100, 150, 200, np.inf]
+rows = []
+for lo, hi in zip(edges[:-1], edges[1:]):
+    m = (lad > lo) & (lad <= hi)
+    if m.sum() >= 20:
+        rows.append({"day_from": lo, "day_to": hi, "n": int(m.sum()),
+                     "median_shap": float(np.median(sj[m])), "mean_shap": float(sj[m].mean())})
+        log.info(f"  days ({lo:g}, {hi:g}]  n={m.sum():5d}  median SHAP {np.median(sj[m]):+.3f}")
+pd.DataFrame(rows).to_csv(OUT / "shap_dependence_last_access_day.csv", index=False)

@@ -42,10 +42,13 @@ Plugin de Moodle que predice el riesgo de abandono/burnout académico y proporci
 ```
 burnoutguard/
 ├── backend/                    # Python FastAPI
-│   ├── main.py                 # API principal (450 líneas)
+│   ├── main.py                 # API: predicción, calibración y explicaciones
+│   ├── fit_calibrator.py       # Entrena el modelo y ajusta su calibrador
+│   ├── models/                 # Modelo y calibrador ya entrenados
 │   ├── requirements.txt        # Dependencias
-│   └── models/                 # Modelos entrenados
+│   └── Dockerfile
 │
+├── docker-compose.yml          # Moodle + backend para pruebas locales
 └── moodle_plugin/              # Plugin Moodle
     └── local/burnoutguard/
         ├── version.php         # Versión
@@ -75,7 +78,8 @@ source venv/bin/activate  # Linux/Mac
 # o: venv\Scripts\activate  # Windows
 
 # Instalar dependencias
-pip install fastapi uvicorn pydantic openai numpy
+pip install -r requirements.txt   # fastapi, uvicorn, pydantic, numpy,
+                                  # scikit-learn, xgboost, joblib, openai
 
 # (Opcional) Configurar OpenAI para explicaciones LLM
 export OPENAI_API_KEY="sk-..."
@@ -166,6 +170,48 @@ El dashboard muestra a los profesores:
 
 ---
 
+## 🎯 Calibración y punto de operación
+
+El modelo se entrena con SMOTE y pesos de clase, lo que **infla las probabilidades
+predichas**: sin corregirlo, una puntuación cruda de 0.81 puede corresponder a una
+probabilidad real de abandono de 0.41. Como el panel muestra niveles de riesgo y no
+un simple ranking, el backend aplica un **calibrador isotónico post-hoc** ajustado
+sobre datos de validación retenidos.
+
+El repositorio incluye `backend/models/calibrator.joblib` y `backend/models/xgboost_model.joblib`
+ya entrenados, de modo que el backend calibra desde el primer arranque. Para
+regenerarlos con tus propios datos:
+
+```bash
+cd backend
+python fit_calibrator.py --data ../../data --week 8
+```
+
+En OULAD, la calibración reduce el ECE de **0.207 a 0.015** y el Brier de 0.187 a
+0.133, dejando el AUROC prácticamente intacto (0.798 → 0.797): no mejora la
+capacidad de ordenar, pero hace que las probabilidades signifiquen lo que dicen.
+
+`GET /health` indica si hay calibrador cargado (`"calibrated": true`). Si falta, el
+backend sigue respondiendo pero registra un aviso: en ese caso la puntuación sólo
+sirve para **ordenar** estudiantes, no como probabilidad.
+
+**Niveles de riesgo.** Los cortes se aplican sobre la probabilidad calibrada y son
+configurables por variables de entorno (`RISK_THRESHOLD_HIGH`, por defecto 0.50;
+`RISK_THRESHOLD_MEDIUM`, por defecto 0.25 ≈ la tasa base de abandono).
+
+**Regla de capacidad.** Si el centro sólo puede atender a una fracción de los
+estudiantes, `POST /batch_predict` acepta `capacity` (p. ej. `0.2`) y marca al 20%
+de mayor riesgo en lugar de usar un corte fijo:
+
+```json
+{ "students": [...], "language": "es", "capacity": 0.2 }
+```
+
+La respuesta añade `flagged` a cada estudiante y devuelve `"calibrated"` y el número
+de estudiantes marcados.
+
+---
+
 ## 🔧 Personalización
 
 ### Añadir nuevo factor de riesgo
@@ -183,16 +229,21 @@ if student.forum_posts < 2 and student.week_of_course >= 4:
     ))
 ```
 
-### Usar modelo ML entrenado
+### Reentrenar el modelo
+
+`backend/fit_calibrator.py` entrena el modelo y ajusta su calibrador en un solo
+paso, y deja ambos en `backend/models/`, que es donde el backend los busca al
+arrancar:
 
 ```bash
-# Entrenar y guardar modelo
-python
->>> from sklearn.externals import joblib
->>> joblib.dump(model, 'backend/models/xgboost_model.joblib')
+cd backend
+python fit_calibrator.py --data ../../data --week 8
 ```
 
-El backend lo cargará automáticamente.
+Si prefieres usar un modelo propio, guárdalo como
+`backend/models/xgboost_model.joblib` con `joblib.dump()`; debe aceptar las nueve
+features en el orden de `BurnoutPredictor.extract_features()`. Recuerda ajustar
+también su calibrador, o el panel mostrará probabilidades infladas.
 
 ---
 
@@ -209,6 +260,6 @@ GNU GPL v3 - Para uso académico e investigación.
   title = {BurnoutGuard: Early Warning System with Explainable AI},
   year = {2024},
   author = {Research Project},
-  url = {https://github.com/...}
+  url = {https://github.com/lspusal/burnoutguard}
 }
 ```
