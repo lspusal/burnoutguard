@@ -44,6 +44,7 @@ Academic risk is operationalized as **course withdrawal**
 | Subgroup fairness (FPR/FNR/AUROC/ECE) | `pipeline.py` | `results/metrics/fairness_extended.json` |
 | Fairness-constrained models (DP/EO) | `fairness_constrained.py` | `results/metrics/fairness_constrained.json` |
 | SHAP global importance | `shap_analysis.py` | `results/metrics/shap_importance_withdrawn.csv` |
+| Student-grouping and seed-stability checks | `robustness_checks.py` | stdout |
 | Early prediction + bootstrap CIs | `early_prediction.py` | `results/metrics/early_prediction_withdrawn.csv` |
 | Architecture control (plain XGBoost on truncated features) | `early_architecture_control.py` | `results/metrics/early_arch_control_xgb.csv` |
 | DeLong, leave-presentations-out CV, reliability diagram | `generalization_tests.py` | `results/metrics/{delong_lr_vs_xgb,cross_presentation_cv}.json`, `figures/calibration.png` |
@@ -56,6 +57,7 @@ Academic risk is operationalized as **course withdrawal**
 python pipeline.py     # ablation, model comparison, leakage, subgroup fairness
 python fairness_constrained.py     # fairlearn demographic-parity-constrained models
 python shap_analysis.py         # SHAP global importance
+python robustness_checks.py     # student grouping + fairness seed stability
 python early_prediction.py        # temporally-truncated early prediction (weeks 2–20)
 python early_architecture_control.py # plain XGBoost on the early features (architecture control)
 python generalization_tests.py     # DeLong, cross-presentation CV, reliability diagram
